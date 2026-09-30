@@ -1,0 +1,245 @@
+@import "tailwindcss";
+
+:root {
+  --primary: #0f6b5c;
+  --primary-dark: #0a4d42;
+  --secondary: #f59e0b;
+  --accent: #14b8a6;
+  --soft: #e6f5f1;
+  --surface: #f7faf9;
+  --ink: #10231f;
+  --muted: #5b726c;
+  --gradient: linear-gradient(135deg, #0f6b5c 0%, #0d9488 55%, #f59e0b 140%);
+  --radius: 18px;
+  --shadow: 0 18px 50px rgba(16, 35, 31, 0.08);
+  --shadow-sm: 0 8px 24px rgba(16, 35, 31, 0.06);
+}
+
+@theme inline {
+  --color-background: var(--surface);
+  --color-foreground: var(--ink);
+  --font-sans: var(--font-body);
+  --font-display: var(--font-display);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  background: var(--surface);
+  color: var(--ink);
+  font-family: var(--font-body), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3,
+.font-display {
+  font-family: var(--font-display), var(--font-body), system-ui, sans-serif;
+  letter-spacing: -0.02em;
+}
+
+/* Do NOT force inherit — it breaks white buttons inside dark sections */
+a {
+  text-decoration: none;
+}
+
+.container-pad {
+  width: min(1120px, calc(100% - 2rem));
+  margin-inline: auto;
+}
+
+.section {
+  padding: 4.5rem 0;
+}
+
+@media (max-width: 768px) {
+  .section {
+    padding: 3.25rem 0;
+  }
+}
+
+.card-surface {
+  background: #fff;
+  border: 1px solid color-mix(in srgb, var(--ink) 6%, transparent);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-on-dark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 48px;
+  border-radius: 999px;
+  padding: 0.85rem 1.4rem;
+  font-weight: 700;
+  font-size: 0.95rem;
+  cursor: pointer;
+  background: #ffffff;
+  color: #0f172a;
+}
+
+.btn-on-dark-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 48px;
+  border-radius: 999px;
+  padding: 0.85rem 1.4rem;
+  font-weight: 700;
+  font-size: 0.95rem;
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.45);
+}
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 44px;
+  background: var(--primary);
+  color: #ffffff;
+  border: none;
+  border-radius: 999px;
+  padding: 0.85rem 1.35rem;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+  box-shadow: 0 10px 24px color-mix(in srgb, var(--primary) 28%, transparent);
+}
+
+.btn-primary:hover {
+  background: var(--primary-dark);
+  transform: translateY(-1px);
+}
+
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 44px;
+  background: #fff;
+  color: var(--ink);
+  border: 1px solid color-mix(in srgb, var(--ink) 12%, transparent);
+  border-radius: 999px;
+  padding: 0.85rem 1.35rem;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.btn-secondary:hover {
+  border-color: var(--primary);
+  transform: translateY(-1px);
+}
+
+.hero-mesh {
+  background:
+    radial-gradient(ellipse 80% 60% at 10% 20%, color-mix(in srgb, var(--accent) 35%, transparent), transparent 55%),
+    radial-gradient(ellipse 70% 50% at 90% 10%, color-mix(in srgb, var(--secondary) 28%, transparent), transparent 50%),
+    radial-gradient(ellipse 60% 40% at 70% 80%, color-mix(in srgb, var(--primary) 22%, transparent), transparent 45%),
+    var(--gradient);
+}
+
+.hero-waves {
+  background: linear-gradient(160deg, color-mix(in srgb, var(--primary) 92%, #000) 0%, var(--accent) 100%);
+}
+
+.hero-dots {
+  background:
+    radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.18) 1px, transparent 0) 0 0 / 18px 18px,
+    var(--gradient);
+}
+
+.hero-grid {
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.06) 1px, transparent 1px) 0 0 / 28px 28px,
+    linear-gradient(90deg, rgba(255, 255, 255, 0.06) 1px, transparent 1px) 0 0 / 28px 28px,
+    var(--gradient);
+}
+
+.hero-bloom {
+  background:
+    radial-gradient(circle at 20% 30%, rgba(255, 255, 255, 0.22), transparent 40%),
+    radial-gradient(circle at 80% 20%, color-mix(in srgb, var(--secondary) 40%, transparent), transparent 35%),
+    var(--gradient);
+}
+
+.reveal {
+  animation: rise 0.7s ease both;
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  .reveal,
+  .btn-primary,
+  .btn-secondary {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+.floating-wa {
+  position: fixed;
+  right: 1rem;
+  bottom: 1rem;
+  z-index: 60;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  background: #25d366;
+  color: #fff;
+  border-radius: 999px;
+  padding: 0.85rem 1.1rem;
+  font-weight: 700;
+  box-shadow: 0 14px 30px rgba(37, 211, 102, 0.35);
+}
+
+@media (max-width: 640px) {
+  .floating-wa span {
+    display: none;
+  }
+  .floating-wa {
+    padding: 0.95rem;
+    border-radius: 999px;
+  }
+}
+
+/* Niche preview chips — never lose contrast */
+.niche-chip {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.12);
+}
+.niche-chip-active {
+  color: #0f172a;
+  background: #ffffff;
+}

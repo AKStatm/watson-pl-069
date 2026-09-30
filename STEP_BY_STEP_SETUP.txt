@@ -1,0 +1,316 @@
+# FULL SETUP — Lead Demo → n8n → GitHub → Vercel → Google Sheets
+
+Follow in order. Do not skip.
+
+========================================================
+PART A — Prepare your Google Sheet (Excel → Sheets)
+========================================================
+
+1. Open Google Sheets (sheets.google.com) and create a new spreadsheet
+   Name it: Pakistan Business Leads
+
+2. Upload / paste your Excel data into Sheet1
+   OR File → Import → Upload your .xlsx
+
+3. Make sure these columns exist (add missing ones):
+   A: Lead ID
+   B: Business Name
+   C: Category
+   D: Niche ID          (example: plumber, electrician, salon)
+   E: Phone
+   F: WhatsApp
+   G: Email
+   H: Address
+   I: City / Area
+   J: Google Maps Link
+   K: Rating
+   L: Review Count
+   M: Top services
+   N: Demo URL
+   O: Repo URL
+   P: Status
+   Q: Notes
+
+4. Fill Lead ID for every row: PL-001, PL-002, EL-001, etc.
+
+5. Fill Niche ID to match template keys:
+   plumber, electrician, ac-hvac, salon, dentist, restaurant, ...
+   (see http://localhost:3000/niches for all IDs)
+
+6. Set Status = New for leads you want to demo first
+
+7. Copy the Sheet URL (you will paste it in n8n)
+
+
+========================================================
+PART B — Push demo template to GitHub (one-time)
+========================================================
+
+1. Install Git if needed: https://git-scm.com/downloads
+
+2. Create a GitHub repo that will be your MASTER TEMPLATE:
+   - Go to https://github.com/new
+   - Name: lead-demo-template
+   - Private recommended
+   - Create repository (empty, no README)
+
+3. In terminal, from your project folder:
+   cd "d:\New folder\New folder\lead-demo-template"
+   git init
+   git add .
+   git commit -m "Initial lead demo template"
+   git branch -M main
+   git remote add origin https://github.com/YOUR_USERNAME/lead-demo-template.git
+   git push -u origin main
+
+4. Create a GitHub Personal Access Token:
+   - GitHub → Settings → Developer settings → Personal access tokens
+   - Fine-grained or classic
+   - Classic scopes needed: repo
+   - Copy token and save in Notepad (you will not see it again)
+
+
+========================================================
+PART C — Connect Vercel (one-time)
+========================================================
+
+1. Login at https://vercel.com (account: leadgenx)
+
+2. Create token:
+   https://vercel.com/account/tokens
+   → Create → copy token → save in Notepad
+
+3. Connect GitHub to Vercel:
+   Vercel → Settings / Account → Integrations / Git
+   → Connect GitHub → authorize YOUR_USERNAME
+
+4. (Optional test) Import lead-demo-template once manually
+   to confirm builds work:
+   Add New → Project → Import Git Repo → lead-demo-template → Deploy
+
+5. Note your Vercel Team / username (for API): often your account slug
+   Example: leadgenx
+
+
+========================================================
+PART D — n8n credentials (akrobyte.app.n8n.cloud)
+========================================================
+
+Open n8n → left menu → Credentials → Add credential
+
+----- D1) Google Sheets OAuth2 -----
+1. Add "Google Sheets OAuth2 API"
+2. Follow n8n Google cloud setup (or use n8n guided connect)
+3. Sign in with the Google account that owns the Sheet
+4. Save as: Google Sheets Leads
+
+----- D2) GitHub -----
+1. Add "GitHub API" or "Header Auth"
+   Easiest: GitHub credential in n8n
+2. Access Token = your GitHub PAT
+3. Save as: GitHub Lead Deploys
+
+----- D3) Vercel (Header Auth) -----
+1. Add credential type: Header Auth
+2. Name: Authorization
+3. Value: Bearer YOUR_VERCEL_TOKEN
+   (include the word Bearer and a space)
+4. Save as: Vercel API
+
+
+========================================================
+PART E — Create the n8n workflow (Path B)
+========================================================
+
+1. n8n → Create workflow
+   Name: Lead Demo Auto Deploy
+
+2. Add nodes in this order:
+
+NODE 1 — Manual Trigger (for testing)
+OR Schedule Trigger (every 15 min later)
+
+NODE 2 — Google Sheets → Get Rows
+- Credential: Google Sheets Leads
+- Document: Pakistan Business Leads
+- Sheet: Sheet1
+- Filters: Status = New
+  (or filter in next Code node)
+
+NODE 3 — Code / IF
+Keep only rows where Status is New and Demo URL is empty
+
+NODE 4 — Set / Edit Fields  (build lead.json payload)
+Map:
+  leadId        ← Lead ID
+  businessName  ← Business Name
+  nicheId       ← Niche ID
+  phone         ← Phone
+  whatsapp      ← WhatsApp
+  address       ← Address
+  cityArea      ← City / Area
+  rating        ← Rating
+  reviewCount   ← Review Count
+  topServices   ← Top services (split by comma if needed)
+  status temp   ← Building
+
+NODE 5 — Google Sheets → Update Row
+Set Status = Building for that Lead ID
+(so you do not process twice)
+
+NODE 6 — HTTP Request → Create GitHub repo
+Method: POST
+URL: https://api.github.com/user/repos
+Auth: GitHub Lead Deploys
+Headers:
+  Accept: application/vnd.github+json
+Body (JSON):
+{
+  "name": "demo-{{Lead ID}}-{{slug of business name}}",
+  "private": false,
+  "auto_init": false,
+  "description": "Demo site for {{Business Name}}"
+}
+
+NODE 7 — Generate files for the new repo
+Options:
+A) Simplest for start:
+   - Keep master template repo
+   - In Code node, produce updated lead.json content
+   - Push ONLY lead.json + use a Vercel deploy from template fork
+B) Recommended practical approach:
+   Use GitHub "generate from template" OR
+   n8n HTTP: create repo from template repository API
+
+GitHub template API:
+POST https://api.github.com/repos/YOUR_USERNAME/lead-demo-template/generate
+Body:
+{
+  "owner": "YOUR_USERNAME",
+  "name": "demo-pl-001-bushra-sons",
+  "include_all_branches": false,
+  "private": false
+}
+
+Then update lead.json in that new repo:
+
+NODE 8 — HTTP Request → Update lead.json in new repo
+PUT https://api.github.com/repos/OWNER/REPO/contents/src/config/lead.json
+Body needs base64 content + message "Set lead data"
+(Get SHA first with GET contents if file exists)
+
+NODE 9 — HTTP Request → Create Vercel project from GitHub repo
+POST https://api.vercel.com/v10/projects
+Header Auth: Vercel API
+Body example:
+{
+  "name": "demo-pl-001-bushra-sons",
+  "framework": "nextjs",
+  "gitRepository": {
+    "type": "github",
+    "repo": "YOUR_USERNAME/demo-pl-001-bushra-sons"
+  }
+}
+
+NODE 10 — Wait / Poll deployment
+GET https://api.vercel.com/v6/deployments?projectId=PROJECT_ID&limit=1
+Until readyState = READY
+Then read url: https://PROJECT.vercel.app
+
+NODE 11 — Google Sheets → Update Row
+- Demo URL = https://your-project.vercel.app
+- Repo URL = https://github.com/YOUR_USERNAME/demo-...
+- Status = Demo Ready
+
+NODE 12 — (Optional) Send yourself Slack/Email/Telegram
+"Demo ready for Bushra and Sons: URL"
+
+
+========================================================
+PART F — Test one lead end-to-end
+========================================================
+
+1. In Sheet, pick ONE plumber row
+2. Lead ID = PL-001
+3. Niche ID = plumber
+4. Status = New
+5. Demo URL empty
+6. In n8n, click Execute workflow
+7. Watch each node succeed (green)
+8. Open Demo URL on phone + laptop
+9. Confirm WhatsApp booking works
+10. Then set Status yourself to Contacted after you message client
+
+
+========================================================
+PART G — Daily manual outreach (you)
+========================================================
+
+1. Filter Sheet: Status = Demo Ready
+2. Copy Demo URL + Business Name + WhatsApp
+3. Send message manually, example:
+
+Assalam o Alaikum,
+Maine aapke business ke liye ek professional demo website banayi hai:
+{{Demo URL}}
+
+Isme WhatsApp booking, services, packages aur location hai.
+Agar pasand aaye to main aapke liye final website + domain setup kar sakta hoon.
+
+4. Update Status = Contacted
+5. Add Notes: replied / interested / price quoted
+
+
+========================================================
+PART H — Checklist of accounts & secrets
+========================================================
+
+[ ] Google account + Sheet ready
+[ ] GitHub account + lead-demo-template repo
+[ ] GitHub PAT (repo scope)
+[ ] Vercel account leadgenx + token
+[ ] GitHub connected inside Vercel
+[ ] n8n Google Sheets credential
+[ ] n8n GitHub credential
+[ ] n8n Vercel Header Auth credential
+[ ] First test lead Status=New
+[ ] Workflow executed once successfully
+
+
+========================================================
+PART I — Common errors & fixes
+========================================================
+
+- Sheet not updating: wrong sheet name / column header mismatch
+- GitHub 401: token expired or missing repo scope
+- Vercel 403: token wrong OR GitHub not connected to Vercel
+- Build fail on Vercel: check Vercel deployment logs (npm build)
+- Wrong niche UI: Niche ID spelling must match exactly (plumber not Plumber)
+- WhatsApp wrong number: store WhatsApp as 92300xxxxxxx in sheet
+
+
+========================================================
+PART J — Suggested first 5 Niche IDs to test
+========================================================
+
+1. plumber
+2. electrician
+3. ac-hvac
+4. salon
+5. restaurant
+
+Open locally while testing UI:
+http://localhost:3000
+http://localhost:3000/niches
+http://localhost:3000/?niche=salon
+
+
+========================================================
+NEXT (I can build for you in Cursor)
+========================================================
+
+Ask me for any of these and I will generate files:
+1) Ready-to-import n8n workflow JSON
+2) Script: create-repo-from-lead.js (GitHub + Vercel API)
+3) Sheet column template CSV
+4) Remove demo preview bar for production deploys

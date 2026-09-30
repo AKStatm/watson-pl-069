@@ -1,0 +1,161 @@
+# Google Sheet formulas + next actions
+
+## SECURITY FIRST (do this now)
+You pasted live GitHub + Vercel tokens in chat.
+1. Revoke GitHub PAT: https://github.com/settings/tokens
+2. Create a NEW PAT (classic, repo scope)
+3. Revoke Vercel token: https://vercel.com/account/tokens
+4. Create a NEW Vercel token
+5. Put NEW tokens only inside n8n Credentials (never in chat / sheet / git)
+
+Your live demo already works:
+https://lead-opal-beta.vercel.app/
+
+---
+
+## 1) Lead ID formula (Column A)
+
+Your headers are on row 2, data starts at row 3.
+Put this in **A3**, then drag down:
+
+### Option A (recommended) — prefix from Category (Column C)
+``` 
+=IF(B3="","",
+  IFS(
+    REGEXMATCH(LOWER(IF(C3="", "plumber", C3)), "plumb"), "PL",
+    REGEXMATCH(LOWER(C3), "electric"), "EL",
+    REGEXMATCH(LOWER(C3), "ac|hvac|cool"), "AC",
+    REGEXMATCH(LOWER(C3), "salon|beauty"), "SL",
+    REGEXMATCH(LOWER(C3), "restaurant|cafe|food"), "FD",
+    TRUE, UPPER(LEFT(REGEXREPLACE(IF(C3="", "XX", C3), "[^A-Za-z]", ""), 2))
+  )
+  & "-" & TEXT(COUNTIF($B$3:B3, "<>"), "000")
+)
+```
+
+Examples:
+- Row 3 → PL-001
+- Row 4 → PL-002
+- First electrician row → EL-00x
+
+### Option B (simple, all plumbers)
+```
+=IF(B3="","","PL-"&TEXT(COUNTIF($B$3:B3,"<>"),"000"))
+```
+
+---
+
+## 2) Add these columns (required for automation)
+
+Add at the end of your header row (row 2):
+
+| Column | Header | Example |
+|--------|--------|---------|
+| ... | Niche ID | plumber |
+| ... | Demo URL | (empty at first) |
+| ... | Repo URL | (empty at first) |
+| ... | Status | New |
+
+### Niche ID formula (if Category is filled)
+```
+=IF(B3,"",
+  IFS(
+    REGEXMATCH(LOWER(IF(C3="","plumber",C3)), "plumb"), "plumber",
+    REGEXMATCH(LOWER(C3), "electric"), "electrician",
+    REGEXMATCH(LOWER(C3), "ac|hvac|cool"), "ac-hvac",
+    REGEXMATCH(LOWER(C3), "salon|beauty"), "salon",
+    TRUE, "handyman"
+  )
+)
+```
+
+If Category column is empty for plumbers, just type `plumber` for those rows.
+
+### Status for first test
+Set only ONE row:
+`Status = New`
+
+---
+
+## 3) Fill City / Area quickly (optional)
+If Address has Lahore / Bahria:
+```
+=IF(B3="","",
+  IF(REGEXMATCH(LOWER(G3), "bahria"), "Bahria Town, Lahore",
+  IF(REGEXMATCH(LOWER(G3), "valencia"), "Valencia, Lahore",
+  IF(REGEXMATCH(LOWER(G3), "gujranwala"), "Gujranwala",
+  "Lahore"))))
+```
+
+---
+
+## 4) n8n credentials (use NEW tokens only)
+
+### A) Google Sheets OAuth2
+- Connect Google account that owns this sheet
+
+### B) GitHub Header Auth
+- Credential type: Header Auth
+- Name: `Authorization`
+- Value: `Bearer YOUR_NEW_GITHUB_PAT`
+
+### C) Vercel Header Auth
+- Credential type: Header Auth
+- Name: `Authorization`
+- Value: `Bearer YOUR_NEW_VERCEL_TOKEN`
+
+---
+
+## 5) Import workflow
+
+File in project:
+`n8n/Lead_Demo_Auto_Deploy.workflow.json`
+
+In n8n:
+1. Workflows → Import from File
+2. Open that JSON
+3. Replace `PASTE_GOOGLE_SHEET_ID_HERE` with your Sheet ID
+   (from URL: docs.google.com/spreadsheets/d/SHEET_ID/edit)
+4. Attach credentials to Google Sheets + both HTTP Header Auth nodes
+5. Ensure GitHub is connected inside Vercel to **AKStatm**
+
+---
+
+## 6) Full flow (what happens)
+
+1. Manual Trigger
+2. Read sheet row where Status = New
+3. Build repo name: `demo-pl-001-bushra-and-sons-sanitary`
+4. Set Status = Building
+5. Create GitHub repo from template `AKStatm/lead-demo-template`
+6. Overwrite `src/config/lead.json` with that lead
+7. Create Vercel project linked to new repo
+8. Wait for deploy
+9. Write back:
+   - Demo URL
+   - Repo URL
+   - Status = Demo Ready
+10. YOU WhatsApp the client manually
+11. Set Status = Contacted
+
+---
+
+## 7) Test checklist
+
+- [ ] Revoke old tokens + create new ones
+- [ ] Lead ID formula filled (PL-001...)
+- [ ] Niche ID + Status + Demo URL + Repo URL columns added
+- [ ] One row Status = New
+- [ ] Template repo enabled (already done)
+- [ ] Vercel ↔ GitHub AKStatm connected
+- [ ] n8n credentials connected
+- [ ] Import workflow + paste Sheet ID
+- [ ] Execute workflow once
+- [ ] Open Demo URL on phone
+- [ ] Message client
+
+---
+
+## Already done
+- Template: https://github.com/AKStatm/lead-demo-template
+- Sample deploy: https://lead-opal-beta.vercel.app/

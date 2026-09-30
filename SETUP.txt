@@ -1,0 +1,74 @@
+# Lead Demo Template — Connect & Run
+
+## What this project is
+Next.js demo website engine for Pakistan local business leads.
+One template + niche configs (70+ niches). Fill `src/config/lead.json` → site becomes that business.
+
+## Run locally
+```bash
+cd lead-demo-template
+npm install
+npm run dev
+```
+Open http://localhost:3000  
+Preview niches: http://localhost:3000/niches  
+Example: http://localhost:3000/?niche=electrician
+
+## Customize a lead (manual)
+Edit `src/config/lead.json`:
+- leadId, businessName, nicheId, phone, whatsapp, address, cityArea
+- rating, reviewCount, topServices, about, workingHours
+
+`nicheId` must match a key from the niches registry (plumber, salon, dentist, etc.).
+
+## What YOU need to connect for full automation later
+
+### 1) Google Sheets (source of truth)
+- Move Excel leads into Google Sheets
+- Add columns: Lead ID, Demo URL, Status, Repo URL
+- Status values: New → Building → Demo Ready → Contacted
+
+### 2) GitHub
+- Account ready (yours: iabdullahmumtaz)
+- Create a Personal Access Token with `repo` scope
+- Automation will create one repo per lead (e.g. demo-pl-001-bushra-sons)
+
+### 3) Vercel (leadgenx)
+- Create Vercel token: https://vercel.com/account/tokens
+- Connect GitHub to Vercel once
+- Hobby plan works for demos (watch project limits)
+
+### 4) n8n Cloud (akrobyte.app.n8n.cloud)
+Credentials to add:
+- Google Sheets OAuth
+- GitHub token (Header Auth / GitHub node)
+- Vercel token (Header Auth)
+
+Workflow (Path B):
+1. Read sheet rows where Status = New
+2. Write lead.json into repo from template
+3. Create GitHub repo + push files
+4. Create Vercel project from repo / wait for deploy URL
+5. Update sheet: Demo URL + Status = Demo Ready
+
+### 5) WhatsApp
+- Keep MANUAL for outreach (safer)
+- Use Demo URL from sheet when messaging
+
+## Tokens / secrets checklist
+[ ] Google account access to the leads sheet
+[ ] GitHub PAT (repo)
+[ ] Vercel token
+[ ] n8n credentials for Sheets + GitHub + Vercel
+[ ] Optional: WhatsApp Business later (not required now)
+
+## Stack used in this template
+- Next.js + TypeScript + Tailwind
+- Ant Design (form, collapse, rate, drawer, tags)
+- RizzUI (buttons/text)
+- React Icons
+- react-hot-toast
+- Framer Motion available if you extend animations
+
+## Next build step (ask me)
+I can add the n8n workflow JSON + GitHub/Vercel deploy scripts next.
